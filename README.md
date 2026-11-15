@@ -25,12 +25,13 @@ ln -s "$(pwd)/skills/llm-wiki" ~/.claude/skills/llm-wiki
 
 ## Curated
 
-別人做的好 skill。只收連結，不複製檔案；有改過內容的才放進 `vendored/`，並註明來源、license 與 commit。
+別人做的好 skill / plugin。不複製檔案，只在 [`marketplace.json`](.claude-plugin/marketplace.json) 加一筆指向對方 repo 的條目；不寫 `sha`，安裝時直接抓對方最新版。有改過內容的才放進 `vendored/`，並註明來源、license 與 commit。
 
 | Skill | 來源 | 用途 | 我的評語 | 安裝方式 |
 |---|---|---|---|---|
+| mattpocock-skills | [mattpocock/skills](https://github.com/mattpocock/skills) | 工程流程 skill：grilling、TDD、code review、domain modeling 等 | | `/plugin install mattpocock-skills@oh-my-skills` |
 
 ## 新增 skill
 
 - **自己做的**：建立 `skills/<name>/SKILL.md`，並在 My Skills 表格加一列。
-- **別人的**：在 Curated 表格加一列即可。
+- **別人的**：在 `.claude-plugin/marketplace.json` 加一筆條目，並在 Curated 表格加一列。

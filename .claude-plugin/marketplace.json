@@ -10,6 +10,18 @@
       "name": "oh-my-skills",
       "description": "YiTsung's personal collection of agent skills",
       "source": "./"
+    },
+    {
+      "name": "mattpocock-skills",
+      "description": "Matt Pocock's agent skills for real engineering: grilling, TDD, code review, domain modelling and more",
+      "author": {
+        "name": "Matt Pocock"
+      },
+      "source": {
+        "source": "url",
+        "url": "https://github.com/mattpocock/skills.git"
+      },
+      "homepage": "https://github.com/mattpocock/skills"
     }
   ]
 }

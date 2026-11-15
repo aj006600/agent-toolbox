@@ -15,6 +15,15 @@
 ln -s "$(pwd)/skills/llm-wiki" ~/.claude/skills/llm-wiki
 ```
 
+## 更新
+
+```bash
+./update.sh                      # 更新所有從這個 marketplace 安裝的 plugin
+./update.sh mattpocock-skills    # 只更新指定的 plugin
+```
+
+需要 `jq`。更新後要重啟 Claude Code 才會生效。
+
 ## My Skills
 
 自己做的 skill，原始檔在 [`skills/`](skills/)。

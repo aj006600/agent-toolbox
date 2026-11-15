@@ -39,6 +39,7 @@ ln -s "$(pwd)/skills/llm-wiki" ~/.claude/skills/llm-wiki
 | Skill | 來源 | 用途 | 我的評語 | 安裝方式 |
 |---|---|---|---|---|
 | mattpocock-skills | [mattpocock/skills](https://github.com/mattpocock/skills) | 工程流程 skill：grilling、TDD、code review、domain modeling 等 | | `/plugin install mattpocock-skills@oh-my-skills` |
+| trader-skill | [jakeschincariol/trader-skill](https://github.com/jakeschincariol/trader-skill) | 11 個投資 skill：複製投資人 13F 持股、追蹤新聞與國會議員交易、依預算配置部位、風險檢查、再平衡 | | `/plugin install trader-skill@oh-my-skills` |
 
 ## 新增 skill
 

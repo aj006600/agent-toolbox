@@ -22,6 +22,18 @@
         "url": "https://github.com/mattpocock/skills.git"
       },
       "homepage": "https://github.com/mattpocock/skills"
+    },
+    {
+      "name": "trader-skill",
+      "description": "Eleven investing skills: copy an investor's 13F, watch news and Congress trades, size trades to a budget, check risk, and never place an order without approval",
+      "author": {
+        "name": "Jake Schincariol"
+      },
+      "source": {
+        "source": "url",
+        "url": "https://github.com/jakeschincariol/trader-skill.git"
+      },
+      "homepage": "https://github.com/jakeschincariol/trader-skill"
     }
   ]
 }

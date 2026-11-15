@@ -30,14 +30,6 @@ ln -s "$(pwd)/skills/llm-wiki" ~/.claude/skills/llm-wiki
 | Skill | 來源 | 用途 | 我的評語 | 安裝方式 |
 |---|---|---|---|---|
 
-## Prompts
-
-維護 skill 時常用的 prompt，放在 [`prompts/`](prompts/)。
-
-| Prompt | 用途 |
-|---|---|
-| [skill-review](prompts/skill-review.md) | 請 Claude 審視 SKILL.md 是否符合最佳實踐 |
-
 ## 新增 skill
 
 - **自己做的**：建立 `skills/<name>/SKILL.md`，並在 My Skills 表格加一列。

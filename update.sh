@@ -87,8 +87,10 @@ status() {
   for name in $(externals); do
     url=$(field "$name" .source.url)
     pinned=$(field "$name" .source.sha)
-    latest=$(resolve "$url")
-    if [ -z "$pinned" ]; then
+    latest=$(resolve "$url" 2>/dev/null) || latest=""
+    if [ -z "$latest" ]; then
+      state="upstream unreachable"
+    elif [ -z "$pinned" ]; then
       state="not pinned"
     elif [ "$pinned" = "$latest" ]; then
       state="up to date"

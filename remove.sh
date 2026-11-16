@@ -3,8 +3,8 @@
 #
 #   ./remove.sh <entry>
 #
-# Own content keeps its files: the script prints the command to delete them.
-# It does not commit and does not uninstall anything. Requires jq.
+# For own content the folder is deleted too; it stays in git history.
+# It does not commit and does not uninstall anything. Requires git and jq.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -12,7 +12,11 @@ MANIFEST=".claude-plugin/marketplace.json"
 HOLDS=".claude-plugin/holds.json"
 README="README.md"
 
-[ $# -eq 1 ] || { sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
+usage() { sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//'; }
+case "${1:-}" in
+  -h | --help) usage; exit 0 ;;
+esac
+[ $# -eq 1 ] || { usage; exit 1; }
 name=$1
 
 source=$(jq -r --arg n "$name" '.plugins[] | select(.name == $n) | .source | if type == "string" then . else "" end' "$MANIFEST")
@@ -35,7 +39,18 @@ rm "$tmp"
 
 echo "Removed entry '$name' from $MANIFEST and $README."
 if [ -n "$source" ]; then
-  echo "Its files are still at ${source#./}. To delete them: git rm -r ${source#./}"
+  dir=${source#./}
+  case $dir in
+    skills/?* | plugins/?*)
+      if [ -n "$(git status --porcelain -- "$dir")" ]; then
+        echo "$dir has changes that were never committed, so it was not deleted."
+        echo "If you no longer want them: git rm -r -f --ignore-unmatch $dir; rm -rf $dir"
+      else
+        git rm -r -q -- "$dir"
+        echo "Deleted $dir (it stays in git history)."
+      fi
+      ;;
+  esac
 fi
 echo "Remind the owner to run on every machine that has it installed:"
 echo "  /plugin uninstall $name@oh-my-skills"

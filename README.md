@@ -118,7 +118,9 @@ git log -p .claude-plugin/marketplace.json
 ./add.sh https://github.com/<帳號>/<repo> <子資料夾>      # repo 裡的某一個 plugin 或 skill
 ```
 
-1. 腳本會判斷種類、鎖定在對方最新的 commit、加進清單與 External 表格。對方 repo 根目錄不是 plugin 也不是 skill 時，它會列出可以加的子資料夾。
+對方是散裝 skill 時要加 `--desc "<英文一句說明>"`；plugin 會沿用對方自己的說明。
+
+1. 腳本會判斷種類、鎖定在對方最新的 commit、加進清單與 External 表格。對方 repo 根目錄不是 plugin 也不是 skill 時，它會列出可以加的子資料夾。條目名稱已被使用時，它會停止且不做任何變更，決定新名稱後加上 `--name <名稱>` 重跑。
 2. 把表格裡的 `（待填）` 填好。
 3. `./test-entry.sh <條目>` 確認裝得起來，`./check.sh` 確認一致。
 4. commit 並 push，再執行 `/plugin marketplace update oh-my-skills` 和 `/plugin install <條目>@oh-my-skills`，然後重啟 Claude Code。
@@ -126,14 +128,15 @@ git log -p .claude-plugin/marketplace.json
 ### Add own content
 
 1. 散裝 skill 建立 `skills/<名稱>/SKILL.md`；plugin 建立 `plugins/<名稱>/`（含 `.claude-plugin/plugin.json` 與 `skills/<skill 名>/SKILL.md`）。
-2. `./add.sh skills/<名稱>` 或 `./add.sh plugins/<名稱>`，再把表格裡的 `（待填）` 填好。
-3. 之後的步驟同上（測試、檢查、commit、push、安裝）。
+2. `./add.sh skills/<名稱> --desc "<英文一句說明>"` 或 `./add.sh plugins/<名稱>`，再把表格裡的 `（待填）` 填好。
+3. `git add` 那個資料夾。沒加的話 `./check.sh` 不會通過，避免 commit 了條目卻漏了檔案。
+4. 之後的步驟同上（測試、檢查、commit、push、安裝）。
 
 之後修改自製內容，push 後執行 `./update.sh --sync`，再重啟 Claude Code。
 
 ### Remove an entry
 
-1. `./remove.sh <條目>`。自製內容的檔案不會被刪，腳本會印出刪除的指令。
+1. `./remove.sh <條目>`。自製內容的資料夾會一併刪除，內容仍留在 git 歷史裡。
 2. commit 並 push。
 3. 在每台裝過的電腦執行 `/plugin uninstall <條目>@oh-my-skills`。沒做這一步的話，之後跑 `./update.sh --sync` 會跳過該條目，並印出解除安裝的指令提醒你。
 
@@ -144,4 +147,6 @@ git log -p .claude-plugin/marketplace.json
 ./check.sh                     # 檢查清單、資料夾、README 是否一致
 ```
 
-`test-entry.sh` 用的是另一個名字（`oh-my-skills-test`）的暫時 marketplace，不會動到你真正的安裝。透過 Claude Code 做 `git commit` 時，`check.sh` 會自動執行，沒通過就擋下。
+`test-entry.sh` 用的是另一個名字（`oh-my-skills-test`）的暫時 marketplace，不會改動你真正的安裝。通過的標準是安裝成功，而且安裝出來的檔案裡有 skill；它還會另外確認 skill 在 Claude Code 裡看得到，但如果你電腦上已經裝了前綴相同的東西，這一步會略過並標明。
+
+透過 Claude Code 做 `git commit` 時，`check.sh` 會自動執行，沒通過就擋下；在終端機直接下的 `git commit` 不會經過這個檢查。

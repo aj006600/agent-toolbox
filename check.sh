@@ -51,6 +51,9 @@ while IFS=$'\t' read -r name kind source sha strict; do
           ;;
         *) problem "$name: own content must live under skills/ or plugins/ (source is $source)" ;;
       esac
+      if [ -d "$dir" ] && [ -n "$(git ls-files --others --exclude-standard -- "$dir")" ]; then
+        problem "$name: $dir has files that are not in git yet; run: git add $dir"
+      fi
       ;;
     external)
       [[ $sha =~ ^[0-9a-f]{40}$ ]] || problem "$name: external entries need a full 40-character sha"
@@ -64,12 +67,14 @@ done < <(jq -r '.plugins[] | [.name,
   (if (.source | type) == "object" then (.source.sha // "-") else "-" end),
   (if has("strict") then .strict else true end | tostring)] | @tsv' "$MANIFEST")
 
-# Every own folder has an entry.
+# Every own folder that is in git has an entry. A folder that is not in git yet is
+# work in progress and is left alone.
 for dir in skills/*/ plugins/*/; do
   [ -d "$dir" ] || continue
   dir=${dir%/}
+  [ -n "$(git ls-files -- "$dir")" ] || continue
   jq -e --arg s "./$dir" 'any(.plugins[]; .source == $s)' "$MANIFEST" >/dev/null ||
-    problem "$dir has no entry; run ./add.sh $dir or delete the folder"
+    problem "$dir has no entry; run ./add.sh $dir, or remove the folder with git rm -r $dir"
 done
 
 # README rows all belong to an entry, and none is left unfilled.

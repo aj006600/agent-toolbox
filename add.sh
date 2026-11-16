@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
 # Add an entry to this marketplace and a row to the matching README table.
 #
-#   ./add.sh skills/<name>          own standalone skill (the folder must already exist)
-#   ./add.sh plugins/<name>         own plugin (the folder must already exist)
-#   ./add.sh <git url>              external plugin or standalone skill at the repo root
-#   ./add.sh <git url> <path>       external plugin or standalone skill in a subfolder
+#   ./add.sh skills/<name> --desc "<sentence>"     own standalone skill (the folder must already exist)
+#   ./add.sh plugins/<name>                        own plugin (the folder must already exist)
+#   ./add.sh <git url> [<path>]                    external plugin, at the repo root or in a subfolder
+#   ./add.sh <git url> [<path>] --desc "<sentence>"   external standalone skill
 #
 # Options (after the arguments above):
-#   --name <entry>     entry name to use instead of the detected one
-#   --desc <sentence>  one-line English description instead of the upstream one
+#   --desc <sentence>  one-line English description. Required for standalone skills;
+#                      plugins default to the description in their plugin.json.
+#   --name <entry>     entry name for an external entry, when the detected one is taken
 #
 # The script detects the kind, pins externals to upstream's latest commit, puts the
 # entry in the right group, and leaves a （待填） placeholder in the README row for
-# you to fill in. It does not commit. Requires git and jq.
+# you to fill in. On a name clash it stops without changing anything. It does not
+# commit. Requires git and jq.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -20,17 +22,9 @@ MANIFEST=".claude-plugin/marketplace.json"
 README="README.md"
 TODO="（待填）"
 
+usage() { sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; }
 die() { echo "add.sh: $*" >&2; exit 1; }
 has_entry() { jq -e --arg n "$1" 'any(.plugins[]; .name == $n)' "$MANIFEST" >/dev/null; }
-
-# frontmatter_field <SKILL.md> <key> -> single-line value, quotes stripped
-frontmatter_field() {
-  awk -v key="$2" '
-    NR == 1 && $0 != "---" { exit }
-    NR > 1 && $0 == "---" { exit }
-    index($0, key ": ") == 1 { print substr($0, length(key) + 3); exit }
-  ' "$1" | sed -e 's/^["'\'']//' -e 's/["'\'']$//'
-}
 
 # insert_entry <group> <entry json>: group is own-skill, own-plugin, or external
 insert_entry() {
@@ -69,7 +63,10 @@ add_row() {
   rm "$tmp"
 }
 
-[ $# -ge 1 ] || { sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
+case "${1:-}" in
+  "") usage; exit 1 ;;
+  -h | --help) usage; exit 0 ;;
+esac
 target=$1
 shift
 subpath=""
@@ -86,6 +83,7 @@ while [ $# -gt 0 ]; do
     *) die "unknown option: $1" ;;
   esac
 done
+need_desc() { [ -n "$desc_override" ] || die "a standalone skill needs --desc \"<one English sentence>\""; }
 
 owner=$(jq -r '.owner.name' "$MANIFEST")
 
@@ -95,14 +93,13 @@ if [[ $target != *://* && $target != git@* ]]; then
   target=${target%/}
   name=$(basename "$target")
   [ -z "$name_override" ] || die "--name is not supported for own content; rename the folder instead"
-  has_entry "$name" && die "an entry named '$name' already exists; ask the owner how to resolve the clash"
+  has_entry "$name" && die "an entry named '$name' already exists; nothing was changed. Ask the owner how to resolve the clash"
 
   case $target in
     skills/*)
       [ -f "$target/SKILL.md" ] || die "$target/SKILL.md not found"
-      desc=${desc_override:-$(frontmatter_field "$target/SKILL.md" description)}
-      [ -n "$desc" ] || die "could not read a description from $target/SKILL.md; pass --desc"
-      entry=$(jq -n --arg n "$name" --arg d "$desc" --arg a "$owner" --arg s "./$target" \
+      need_desc
+      entry=$(jq -n --arg n "$name" --arg d "$desc_override" --arg a "$owner" --arg s "./$target" \
         '{name: $n, description: $d, author: {name: $a}, source: $s, strict: false, skills: ["./"]}')
       insert_entry own-skill "$entry"
       add_row "## Own Skills" "| [$name]($target/SKILL.md) | $TODO | $TODO |"
@@ -123,14 +120,22 @@ if [[ $target != *://* && $target != git@* ]]; then
       ;;
     *) die "own content must be under skills/ or plugins/ (got '$target')" ;;
   esac
-  echo "Added own entry '$name'. Fill in the $TODO cells in $README, then run ./check.sh."
+  echo "Added own entry '$name'."
+  echo "Next: fill in the $TODO cells in $README, git add $target, then run ./test-entry.sh $name and ./check.sh."
   exit 0
 fi
 
 # ---------- external content ----------
 url=${target%/}
-if [[ $url == http* && $url != *.git ]]; then url="$url.git"; fi
-web=${url%.git}
+if [[ $url == git@*:* ]]; then
+  # git@host:account/repo(.git) -> https://host/account/repo for links
+  rest=${url#git@}
+  rest=${rest%.git}
+  web="https://${rest%%:*}/${rest#*:}"
+else
+  if [[ $url == http* && $url != *.git ]]; then url="$url.git"; fi
+  web=${url%.git}
+fi
 account=$(basename "$(dirname "$web")")
 repo=$(basename "$web")
 
@@ -147,12 +152,14 @@ if [ -f "$dir/.claude-plugin/plugin.json" ]; then
   kind="plugin"
   upstream_name=$(jq -r '.name' "$dir/.claude-plugin/plugin.json")
   author=$(jq -r '.author.name // empty' "$dir/.claude-plugin/plugin.json")
-  desc=$(jq -r '.description // empty' "$dir/.claude-plugin/plugin.json")
+  desc=${desc_override:-$(jq -r '.description // empty' "$dir/.claude-plugin/plugin.json")}
+  [ -n "$desc" ] || die "upstream plugin.json has no description; pass --desc"
 elif [ -f "$dir/SKILL.md" ]; then
   kind="散裝 skill"
   upstream_name=$(basename "${subpath:-$repo}")
   author=""
-  desc=$(frontmatter_field "$dir/SKILL.md" description)
+  need_desc
+  desc=$desc_override
 else
   echo "add.sh: no .claude-plugin/plugin.json or SKILL.md at '${subpath:-the repo root}' of $url." >&2
   echo "Folders in that repo that can be added (pass one as the second argument):" >&2
@@ -161,19 +168,16 @@ else
   exit 1
 fi
 author=${author:-$account}
-desc=${desc_override:-$desc}
-[ -n "$desc" ] || die "could not read a description from upstream; pass --desc"
 
 name=${name_override:-$upstream_name}
 if has_entry "$name"; then
-  [ -z "$name_override" ] || die "an entry named '$name' already exists"
-  name="$account-$upstream_name"
-  has_entry "$name" && die "entries named '$upstream_name' and '$name' already exist; pass --name"
-  echo "Note: '$upstream_name' is taken, so this entry is named '$name'."
-fi
-if [ "$kind" = "plugin" ] && [ "$name" != "$upstream_name" ]; then
-  echo "Warning: skills from this plugin keep the prefix '$upstream_name:'. If another installed" >&2
-  echo "  plugin uses the same prefix, their skills overwrite each other. Tell the owner." >&2
+  echo "add.sh: an entry named '$name' already exists; nothing was changed." >&2
+  echo "Ask the owner, then rerun with a different name, for example: --name $account-$upstream_name" >&2
+  if [ "$kind" = "plugin" ]; then
+    echo "Tell the owner: a renamed plugin still installs its skills under the prefix '$upstream_name:'," >&2
+    echo "so if both plugins are installed their skills overwrite each other." >&2
+  fi
+  exit 1
 fi
 
 if [ -n "$subpath" ]; then
@@ -199,4 +203,4 @@ fi
 insert_entry external "$entry"
 add_row "## External" "| $name | $kind | [$link]($homepage) | $TODO | |"
 echo "Added external $kind '$name' pinned to ${sha:0:7}."
-echo "Fill in the $TODO cell in $README, then run ./check.sh."
+echo "Next: fill in the $TODO cell in $README, then run ./test-entry.sh $name and ./check.sh."

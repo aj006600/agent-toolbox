@@ -6,6 +6,8 @@
 #   ./update.sh <entry>           pin one entry to its latest commit
 #   ./update.sh <entry> <ref>     pin one entry to a branch, tag, or full 40-char sha
 #   ./update.sh --sync            pull this repo, then bring this machine's installs in line with the pins
+#   ./update.sh --hold <entry> [reason]   keep an entry at its pinned commit; --all skips it
+#   ./update.sh --unhold <entry>          let it move again
 #
 # Changing a pin commits and pushes the manifest, then updates the matching installs
 # in Claude Code. Nothing runs unless you invoke it. Requires git, jq, and the claude CLI.
@@ -14,9 +16,55 @@ cd "$(dirname "$0")"
 
 MARKETPLACE="oh-my-skills"
 MANIFEST=".claude-plugin/marketplace.json"
+HOLDS=".claude-plugin/holds.json"
 
 externals() { jq -r '.plugins[] | select(.source | type == "object") | .name' "$MANIFEST"; }
 field() { jq -r --arg n "$1" ".plugins[] | select(.name == \$n) | $2 // empty" "$MANIFEST"; }
+
+# hold_reason <entry> -> the reason it is held, or nothing if it is not held
+hold_reason() {
+  [ -f "$HOLDS" ] || return 0
+  jq -r --arg n "$1" '.[$n] // empty' "$HOLDS"
+}
+
+# set_hold <entry> [reason]: an empty reason releases the hold. Commits and pushes.
+set_hold() {
+  local name=$1 reason=${2:-} tmp verb
+  if [ -z "$(field "$name" '(.source | objects | .url)')" ]; then
+    echo "Not an external entry: $name" >&2
+    exit 1
+  fi
+  if [ -z "${OMS_NO_GIT:-}" ]; then
+    if [ -n "$(git status --porcelain -- "$HOLDS")" ]; then
+      echo "$HOLDS has uncommitted changes; commit or discard them first." >&2
+      exit 1
+    fi
+    git pull -q --ff-only
+  fi
+  [ -f "$HOLDS" ] || echo '{}' >"$HOLDS"
+  tmp=$(mktemp)
+  if [ -n "$reason" ]; then
+    verb="hold"
+    jq --arg n "$name" --arg r "$reason" '.[$n] = $r' "$HOLDS" >"$tmp"
+  else
+    verb="unhold"
+    jq --arg n "$name" 'del(.[$n])' "$HOLDS" >"$tmp"
+  fi
+  if cmp -s "$tmp" "$HOLDS"; then
+    rm "$tmp"
+    echo "$name: nothing to change"
+    return 0
+  fi
+  cat "$tmp" >"$HOLDS"
+  rm "$tmp"
+  echo "$name: $verb${reason:+ ($reason)}"
+  if [ -z "${OMS_NO_GIT:-}" ]; then
+    git add -- "$HOLDS"
+    git commit -q -m "chore: $verb $name" -- "$HOLDS"
+    git push -q
+    echo "Pushed: chore: $verb $name"
+  fi
+}
 
 # resolve <url> [ref] -> full commit sha
 resolve() {
@@ -34,7 +82,7 @@ resolve() {
 }
 
 status() {
-  local name url pinned latest state
+  local name url pinned latest state held
   printf '%-24s %-9s %-9s %s\n' ENTRY PINNED LATEST STATUS
   for name in $(externals); do
     url=$(field "$name" .source.url)
@@ -50,6 +98,8 @@ status() {
         state="$state  ${url%.git}/compare/${pinned:0:7}...${latest:0:7}"
       fi
     fi
+    held=$(hold_reason "$name")
+    [ -z "$held" ] || state="held ($held); $state"
     printf '%-24s %-9s %-9s %s\n' "$name" "${pinned:0:7}" "${latest:0:7}" "$state"
   done
 }
@@ -99,19 +149,48 @@ reinstall_if_stale() {
 
 case "${1:-}" in
   "") status; exit 0 ;;
-  -h | --help) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+  -h | --help) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+  --hold)
+    [ $# -ge 2 ] || { echo "Usage: ./update.sh --hold <entry> [reason]" >&2; exit 1; }
+    name=$2
+    shift 2
+    set_hold "$name" "${*:-held}"
+    exit 0
+    ;;
+  --unhold)
+    [ $# -eq 2 ] || { echo "Usage: ./update.sh --unhold <entry>" >&2; exit 1; }
+    set_hold "$2"
+    exit 0
+    ;;
   --sync)
     # Pull first: the reinstall check reads the pins from this clone's manifest.
     [ -n "${OMS_NO_GIT:-}" ] || git pull -q --ff-only
     sync_installed
     exit $?
     ;;
-  --all) targets=$(externals); ref="" ;;
+  --all)
+    ref=""
+    targets=""
+    for name in $(externals); do
+      held=$(hold_reason "$name")
+      if [ -n "$held" ]; then
+        echo "$name: held ($held); skipped"
+      else
+        targets="$targets $name"
+      fi
+    done
+    ;;
   *)
     targets=$1
     ref=${2:-}
     if [ -z "$(field "$1" '(.source | objects | .url)')" ]; then
       echo "Not an external entry: $1" >&2
+      exit 1
+    fi
+    held=$(hold_reason "$1")
+    if [ -n "$held" ] && [ -z "$ref" ]; then
+      echo "$1 is held ($held). Name a version to move it anyway, or release it first:" >&2
+      echo "  ./update.sh --unhold $1" >&2
       exit 1
     fi
     ;;
@@ -142,6 +221,9 @@ for name in $targets; do
   rm "$tmp"
   echo "$name: ${old:0:7} -> ${new:0:7}"
   [ -z "$old" ] || echo "  roll back with: ./update.sh $name $old"
+  if [ -n "$ref" ] && [ -z "$(hold_reason "$name")" ]; then
+    echo "  to keep --all from moving it: ./update.sh --hold $name <reason>"
+  fi
   changed="$changed $name"
 done
 

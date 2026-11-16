@@ -43,7 +43,7 @@
 
 ## Own Plugins
 
-原始檔在 `plugins/<名稱>/`。目前沒有。
+原始檔在 `plugins/<名稱>/`，每個 plugin 各自一筆條目。
 
 | 條目 | 用途 | 包含的 skill |
 |---|---|---|
@@ -60,24 +60,26 @@
 外部條目都鎖定在對方 repo 的某個 commit，只有你下指令時才會變動。
 
 ```bash
-./update.sh                    # 看狀態：鎖定版本、對方最新版、是否有更新（附比較連結）
-./update.sh --all              # 所有外部條目升到對方最新版
+./update.sh                    # 看狀態：鎖定版本、對方最新版、是否有更新（附比較連結）、是否暫停升級
+./update.sh --all              # 所有外部條目升到對方最新版（暫停升級的會跳過）
 ./update.sh <條目>             # 單一條目升到對方最新版
 ./update.sh <條目> <版本>      # 單一條目升或降到指定版本（分支、tag 或完整 commit 編號）
 ./update.sh --sync             # 先 git pull，再把這台電腦已安裝的東西對齊到目前的鎖定版本
+./update.sh --hold <條目> [原因]   # 暫停升級：讓這個條目停在目前的版本
+./update.sh --unhold <條目>        # 恢復升級
 ```
 
-升降版本會自動 commit 並 push `marketplace.json`，再更新這台電腦上已安裝的條目；更新後要重啟 Claude Code 才生效。需要 `git`、`jq` 和 `claude` CLI。
+升降版本、暫停或恢復升級都會自動 commit 並 push；升降版本還會更新這台電腦上已安裝的條目，更新後要重啟 Claude Code 才生效。需要 `git`、`jq` 和 `claude` CLI。
 
 - `marketplace.json` 有未 commit 的修改時，升降版本會拒絕執行。
-- `--all` 會把所有外部條目都升到最新版，包括你刻意停在舊版的；有這種條目時改用逐一升級。
+- 暫停升級的條目，`--all` 會跳過，`./update.sh <條目>` 會拒絕；要動它得明確指定版本，或先 `--unhold`。暫停的名單記在 `.claude-plugin/holds.json`。
 - 外部散裝 skill 的「有更新」看的是對方整個 repo，對方改了別的 skill 也會顯示。
 
 ## Common Tasks
 
 ### Set up a new machine
 
-1. `git clone https://github.com/aj006600/oh-my-skills.git`（之後要用 `update.sh`）。
+1. `git clone https://github.com/aj006600/oh-my-skills.git`（之後要用這裡的腳本）。
 2. 在 Claude Code 執行 `/plugin marketplace add aj006600/oh-my-skills`。
 3. 對想用的條目執行 `/plugin install <條目>@oh-my-skills`，然後重啟 Claude Code。
 
@@ -89,7 +91,13 @@
 
 ### Roll back after an upgrade
 
-升級時腳本會印出一行 `roll back with: ./update.sh <條目> <舊的 commit 編號>`，執行那一行即可。事後想查以前鎖過哪些版本：
+升級時腳本會印出一行 `roll back with: ./update.sh <條目> <舊的 commit 編號>`，執行那一行即可。不想讓它之後又被 `--all` 升回去的話，再暫停升級：
+
+```bash
+./update.sh --hold <條目> 新版不好用
+```
+
+事後想查以前鎖過哪些版本：
 
 ```bash
 git log -p .claude-plugin/marketplace.json
@@ -105,20 +113,35 @@ git log -p .claude-plugin/marketplace.json
 
 ### Add an external skill or plugin
 
-1. 在 `.claude-plugin/marketplace.json` 加一筆指向對方 repo 的條目，鎖定在對方最新的 commit。對方是散裝 skill 時，每個 skill 各自一筆。
-2. 在 External 表格加一列。
-3. commit 並 push，再執行 `/plugin marketplace update oh-my-skills` 和 `/plugin install <條目>@oh-my-skills`。
+```bash
+./add.sh https://github.com/<帳號>/<repo>                 # 整個 repo 是一個 plugin 或一個 skill
+./add.sh https://github.com/<帳號>/<repo> <子資料夾>      # repo 裡的某一個 plugin 或 skill
+```
+
+1. 腳本會判斷種類、鎖定在對方最新的 commit、加進清單與 External 表格。對方 repo 根目錄不是 plugin 也不是 skill 時，它會列出可以加的子資料夾。
+2. 把表格裡的 `（待填）` 填好。
+3. `./test-entry.sh <條目>` 確認裝得起來，`./check.sh` 確認一致。
+4. commit 並 push，再執行 `/plugin marketplace update oh-my-skills` 和 `/plugin install <條目>@oh-my-skills`，然後重啟 Claude Code。
 
 ### Add own content
 
-1. 散裝 skill 建立 `skills/<名稱>/SKILL.md`；plugin 建立 `plugins/<名稱>/`（含 `.claude-plugin/plugin.json`）。
-2. 在 `marketplace.json` 加一筆條目，並在對應的表格加一列。
-3. commit 並 push，再安裝（步驟同上）。
+1. 散裝 skill 建立 `skills/<名稱>/SKILL.md`；plugin 建立 `plugins/<名稱>/`（含 `.claude-plugin/plugin.json` 與 `skills/<skill 名>/SKILL.md`）。
+2. `./add.sh skills/<名稱>` 或 `./add.sh plugins/<名稱>`，再把表格裡的 `（待填）` 填好。
+3. 之後的步驟同上（測試、檢查、commit、push、安裝）。
 
 之後修改自製內容，push 後執行 `./update.sh --sync`，再重啟 Claude Code。
 
 ### Remove an entry
 
-1. 從 `marketplace.json` 刪掉那一筆條目，並刪掉對應表格的那一列；自製的連同檔案一起刪。
+1. `./remove.sh <條目>`。自製內容的檔案不會被刪，腳本會印出刪除的指令。
 2. commit 並 push。
 3. 在每台裝過的電腦執行 `/plugin uninstall <條目>@oh-my-skills`。沒做這一步的話，之後跑 `./update.sh --sync` 會跳過該條目，並印出解除安裝的指令提醒你。
+
+### Test and check
+
+```bash
+./test-entry.sh <條目>...      # 在隔離的暫時 marketplace 實際安裝，確認 skill 看得到，測完自動清除
+./check.sh                     # 檢查清單、資料夾、README 是否一致
+```
+
+`test-entry.sh` 用的是另一個名字（`oh-my-skills-test`）的暫時 marketplace，不會動到你真正的安裝。透過 Claude Code 做 `git commit` 時，`check.sh` 會自動執行，沒通過就擋下。

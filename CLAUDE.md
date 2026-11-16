@@ -31,7 +31,7 @@
 - 新增自製內容時，commit 要包含那個資料夾、清單和 README 三者。
 - 移除條目後，提醒我在每台裝過的電腦執行 `/plugin uninstall <條目>@oh-my-skills`。
 - `TC.md` 是給我自己看的繁體中文版 `SKILL.md`，沒有功能上的作用。skill 有 `TC.md` 時，改 `SKILL.md` 要在同一個 commit 同步更新它；新 skill 不需要附，除非我要求。
-- 自製 plugin 的 `plugin.json` 寫 `name`（與資料夾同名）、`description`、`author`，不寫 `version`；skill 放在 `plugins/<名稱>/skills/<skill 名>/SKILL.md`。
+- 自製 plugin 的 `plugin.json` 寫 `name`（與資料夾同名）、`description`、`author`，不寫 `version`；內容放在 plugin 資料夾裡的標準位置：`skills/<skill 名>/SKILL.md`、`agents/`、`commands/`、`hooks/hooks.json`、`.mcp.json`。agent、MCP server 這類不單獨放在 repo 根目錄。
 
 ## Conventions
 

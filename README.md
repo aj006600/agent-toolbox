@@ -4,7 +4,7 @@
 
 ## How It Works
 
-- **Skill** 是一個含 `SKILL.md` 的資料夾；不屬於任何 plugin、單獨存在的叫**散裝 skill**。**Plugin** 是帶 `plugin.json` 的套件，裡面可以有多個 skill。
+- **Skill** 是一個含 `SKILL.md` 的資料夾；不屬於任何 plugin、單獨存在的叫**散裝 skill**。**Plugin** 是帶 `plugin.json` 的套件，裡面可以有 skill、agent、slash command、hook 和 MCP server。
 - **條目**是清單（`.claude-plugin/marketplace.json`）裡的一筆記錄，對應一個可安裝的散裝 skill 或 plugin。
 - **自製**的內容，檔案就放在這個 repo 的 `skills/` 或 `plugins/`。
 - **外部**的內容，這裡只有一筆指向對方 repo 的條目，不複製對方的檔案，更新時跟著對方的最新版。
@@ -34,7 +34,7 @@
 
 原始檔在 `plugins/<名稱>/`，每個 plugin 各自一筆條目。
 
-| 條目 | 用途 | 包含的 skill |
+| 條目 | 用途 | 內容 |
 |---|---|---|
 
 ## External
@@ -72,7 +72,7 @@
 4. commit 並 push。自製內容要連同它的資料夾一起 commit。
 5. 執行 `/plugin marketplace update oh-my-skills` 和 `/plugin install <條目>@oh-my-skills`，然後重啟 Claude Code。
 
-自製 plugin 的資料夾要有 `.claude-plugin/plugin.json`（`name` 與資料夾同名，不寫 `version`）和 `skills/<skill 名>/SKILL.md`。
+自製 plugin 的資料夾要有 `.claude-plugin/plugin.json`（`name` 與資料夾同名，不寫 `version`）。內容依需要放：`skills/<skill 名>/SKILL.md`、`agents/<agent 名>.md`、`commands/<指令名>.md`、`hooks/hooks.json`、`.mcp.json`。
 
 ## Removing
 

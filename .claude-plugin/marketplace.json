@@ -26,8 +26,7 @@
       },
       "source": {
         "source": "url",
-        "url": "https://github.com/mattpocock/skills.git",
-        "sha": "5863806dd4e15c63174bee4e7515a4256792ecfa"
+        "url": "https://github.com/mattpocock/skills.git"
       },
       "homepage": "https://github.com/mattpocock/skills"
     },
@@ -39,8 +38,7 @@
       },
       "source": {
         "source": "url",
-        "url": "https://github.com/jakeschincariol/trader-skill.git",
-        "sha": "5189e79b9a480755a3733ac9713f5353981dbe18"
+        "url": "https://github.com/jakeschincariol/trader-skill.git"
       },
       "homepage": "https://github.com/jakeschincariol/trader-skill"
     }

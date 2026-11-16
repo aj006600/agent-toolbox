@@ -11,10 +11,10 @@
 #                      plugins default to the description in their plugin.json.
 #   --name <entry>     entry name for an external entry, when the detected one is taken
 #
-# The script detects the kind, pins externals to upstream's latest commit, puts the
-# entry in the right group, and leaves a （待填） placeholder in the README row for
-# you to fill in. On a name clash it stops without changing anything. It does not
-# commit. Requires git and jq.
+# The script detects the kind, puts the entry in the right group, and leaves a
+# （待填） placeholder in the README row for you to fill in. External entries follow
+# upstream's latest commit. On a name clash it stops without changing anything.
+# It does not commit. Requires git and jq.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -88,7 +88,7 @@ need_desc() { [ -n "$desc_override" ] || die "a standalone skill needs --desc \"
 owner=$(jq -r '.owner.name' "$MANIFEST")
 
 # ---------- own content ----------
-if [[ $target != *://* && $target != git@* ]]; then
+if [[ $target != *://* ]]; then
   target=${target#./}
   target=${target%/}
   name=$(basename "$target")
@@ -121,28 +121,20 @@ if [[ $target != *://* && $target != git@* ]]; then
     *) die "own content must be under skills/ or plugins/ (got '$target')" ;;
   esac
   echo "Added own entry '$name'."
-  echo "Next: fill in the $TODO cells in $README, git add $target, then run ./test-entry.sh $name and ./check.sh."
+  echo "Next: fill in the $TODO cells in $README, then git add $target along with the manifest and README."
   exit 0
 fi
 
 # ---------- external content ----------
 url=${target%/}
-if [[ $url == git@*:* ]]; then
-  # git@host:account/repo(.git) -> https://host/account/repo for links
-  rest=${url#git@}
-  rest=${rest%.git}
-  web="https://${rest%%:*}/${rest#*:}"
-else
-  if [[ $url == http* && $url != *.git ]]; then url="$url.git"; fi
-  web=${url%.git}
-fi
+if [[ $url == http* && $url != *.git ]]; then url="$url.git"; fi
+web=${url%.git}
 account=$(basename "$(dirname "$web")")
 repo=$(basename "$web")
 
 clone=$(mktemp -d)
 trap 'rm -rf "$clone"' EXIT
 git clone -q --depth 1 "$url" "$clone" || die "could not clone $url"
-sha=$(git -C "$clone" rev-parse HEAD)
 branch=$(git -C "$clone" rev-parse --abbrev-ref HEAD)
 
 dir="$clone${subpath:+/$subpath}"
@@ -181,12 +173,11 @@ if has_entry "$name"; then
 fi
 
 if [ -n "$subpath" ]; then
-  source=$(jq -n --arg u "$url" --arg p "$subpath" --arg s "$sha" \
-    '{source: "git-subdir", url: $u, path: $p, sha: $s}')
+  source=$(jq -n --arg u "$url" --arg p "$subpath" '{source: "git-subdir", url: $u, path: $p}')
   homepage="$web/tree/$branch/$subpath"
   link="$account/$repo/$subpath"
 else
-  source=$(jq -n --arg u "$url" --arg s "$sha" '{source: "url", url: $u, sha: $s}')
+  source=$(jq -n --arg u "$url" '{source: "url", url: $u}')
   homepage="$web"
   link="$account/$repo"
 fi
@@ -202,5 +193,5 @@ fi
 
 insert_entry external "$entry"
 add_row "## External" "| $name | $kind | [$link]($homepage) | $TODO | |"
-echo "Added external $kind '$name' pinned to ${sha:0:7}."
-echo "Next: fill in the $TODO cell in $README, then run ./test-entry.sh $name and ./check.sh."
+echo "Added external $kind '$name'."
+echo "Next: fill in the $TODO cell in $README."

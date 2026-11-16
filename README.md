@@ -19,7 +19,7 @@
 ```
 
 - `marketplace.json` 是清單，每一筆條目對應一個可安裝的散裝 skill 或 plugin。
-- 自製條目永遠使用這個 repo 裡的最新內容。
+- 自製條目沒有鎖定版本，用的是這個 repo 的內容。改了之後要 push，再在電腦上同步並重啟才會生效。
 - 外部條目不複製對方的檔案，只記錄對方 repo 的位置和鎖定版本（某一個 commit）。對方之後怎麼改都不會影響你，直到你自己升版。
 - 你的電腦是從 GitHub 上的清單安裝的，所以清單的變更要 push 之後才會生效。
 - 沒有任何自動更新：清單和你電腦上的安裝，都只在你下指令時才會變動。
@@ -31,7 +31,7 @@
 /plugin install <條目>@oh-my-skills
 ```
 
-安裝後 skill 會以 `<條目>:<skill 名稱>` 出現，例如 `llm-wiki:llm-wiki`。
+安裝後 skill 會以 `<條目>:<skill 名稱>` 出現，例如 `llm-wiki:llm-wiki`。外部 plugin 的前綴是對方原本的 plugin 名稱，通常與條目同名。
 
 ## Own Skills
 
@@ -68,6 +68,10 @@
 ```
 
 升降版本會自動 commit 並 push `marketplace.json`，再更新這台電腦上已安裝的條目；更新後要重啟 Claude Code 才生效。需要 `git`、`jq` 和 `claude` CLI。
+
+- `marketplace.json` 有未 commit 的修改時，升降版本會拒絕執行。
+- `--all` 會把所有外部條目都升到最新版，包括你刻意停在舊版的；有這種條目時改用逐一升級。
+- 外部散裝 skill 的「有更新」看的是對方整個 repo，對方改了別的 skill 也會顯示。
 
 ## Common Tasks
 

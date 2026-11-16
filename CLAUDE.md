@@ -18,6 +18,9 @@
 - 需要在我的 Claude Code 暫時加 marketplace 或安裝條目來測試時，先問過我；測完把 marketplace、安裝、快取全部移除，並回報環境是否已還原。步驟見 Testing an entry。
 - 條目 push 之後的安裝（`/plugin marketplace update`、`/plugin install`）由我自己執行；除非我明確要求，不要替我安裝。
 - 我要求升降版本或同步時，直接跑 `update.sh`。它會更新這台電腦上已安裝的條目，這是我要的，不算「替我安裝」。
+- `update.sh` 升降版本前會先確認 `marketplace.json` 沒有未 commit 的修改，並執行 `git pull --ff-only`；任一項不成立就停止。清單裡有還在等我看的修改、我又要求升降版本時，停下來問我要先處理哪一個，不要為了讓腳本能跑而自行 commit。
+- `./update.sh --all` 會把每一筆外部條目都升到最新版，包括我刻意停在舊版的。我曾指定某條目停在特定版本時，改用逐一升級，並先跟我確認。
+- README 裡的 `/plugin install` 等安裝步驟是寫給我執行的，不是給你的。
 
 ## Repo rules
 
@@ -37,9 +40,18 @@
 
 ## Entry formats
 
-以下四種寫法都實測過可以安裝；自製條目在 push 之後跑 `./update.sh --sync` 會更新到新的 commit，也實測過。`strict: false` 加 `skills` 用在沒有 `plugin.json` 的散裝 skill：由條目指出 skill 資料夾的位置，路徑相對於 `source`，`./` 表示 `source` 本身就是那個 skill 資料夾。安裝後 skill 的名稱是 `<條目>:<skill 名>`。
+以下四種寫法都實測過可以安裝；自製條目在 push 之後跑 `./update.sh --sync` 會更新到新的 commit，也實測過。`strict: false` 加 `skills` 用在沒有 `plugin.json` 的散裝 skill：由條目指出 skill 資料夾的位置，路徑相對於 `source`，`./` 表示 `source` 本身就是那個 skill 資料夾。
+
+安裝後 skill 的名稱是 `<前綴>:<skill 名>`，`<skill 名>` 是 `SKILL.md` 開頭的 `name`。前綴依種類而定：
+
+- 散裝 skill（自製或外部）：前綴是條目名稱。
+- plugin（自製或外部）：前綴是 `plugin.json` 的 `name`。自製 plugin 的 `plugin.json` `name` 要與條目名稱相同；外部 plugin 通常也相同，只有因撞名改過條目名稱時才不同。
 
 外部條目的 `source` 一定要有 `url` 欄位，`update.sh` 靠它查對方的最新 commit。`homepage` 裡的分支名用對方的預設分支。
+
+外部散裝 skill 用 `update.sh` 升降版本也實測過。它的「有更新」是看對方整個 repo 的最新 commit，所以對方改了別的 skill 也會顯示有更新。
+
+範例的排版就是清單檔的排版，照抄即可。
 
 自製散裝 skill（檔案在 `skills/foo/`）：
 
@@ -47,10 +59,14 @@
 {
   "name": "foo",
   "description": "One-line English summary",
-  "author": { "name": "YiTsung" },
+  "author": {
+    "name": "YiTsung"
+  },
   "source": "./skills/foo",
   "strict": false,
-  "skills": ["./"]
+  "skills": [
+    "./"
+  ]
 }
 ```
 
@@ -60,7 +76,9 @@
 {
   "name": "baz",
   "description": "One-line English summary",
-  "author": { "name": "YiTsung" },
+  "author": {
+    "name": "YiTsung"
+  },
   "source": "./plugins/baz"
 }
 ```
@@ -71,7 +89,9 @@
 {
   "name": "cool-plugin",
   "description": "One-line English summary",
-  "author": { "name": "Upstream Author" },
+  "author": {
+    "name": "Upstream Author"
+  },
   "source": {
     "source": "url",
     "url": "https://github.com/example/cool-plugin.git",
@@ -87,7 +107,9 @@
 {
   "name": "bar",
   "description": "One-line English summary",
-  "author": { "name": "Upstream Author" },
+  "author": {
+    "name": "Upstream Author"
+  },
   "source": {
     "source": "git-subdir",
     "url": "https://github.com/example/many-skills.git",
@@ -95,7 +117,9 @@
     "sha": "<40-char commit sha>"
   },
   "strict": false,
-  "skills": ["./"],
+  "skills": [
+    "./"
+  ],
   "homepage": "https://github.com/example/many-skills/tree/main/skills/bar"
 }
 ```
@@ -111,7 +135,7 @@
 claude plugin validate .
 claude plugin marketplace add "$(pwd)"                      # 以本機路徑加入，讀的是未 commit 的清單
 claude plugin install <條目>@oh-my-skills --scope local
-claude -p --model haiku "List the available skill names that start with '<條目>:'. Names only." < /dev/null
+claude -p --model haiku "List the available skill names that start with '<前綴>:'. Names only." < /dev/null   # 前綴見 Entry formats
 OMS_NO_GIT=1 ./update.sh <條目> <版本>                      # 只在要測 update.sh 時用；跳過 pull、commit、push
 ```
 

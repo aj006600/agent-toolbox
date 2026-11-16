@@ -29,7 +29,7 @@
 - `add.sh` 在 README 留下的 `（待填）` 要填完：「用途」「觸發方式」用繁體中文寫；External 表格的「我的評語」留空給我填。
 - `add.sh` 遇到條目撞名會直接停止、不做任何變更。把它印出的訊息告訴我，等我決定後再處理，不要自行決定名稱。
 - 新增自製內容時，commit 要包含那個資料夾、清單和 README 三者。
-- 移除條目後，提醒我在每台裝過的電腦執行 `/plugin uninstall <條目>@oh-my-skills`。
+- 移除條目後，提醒我在每台裝過的電腦執行 `/plugin uninstall <條目>@agent-toolbox`。
 - `TC.md` 是給我自己看的繁體中文版 `SKILL.md`，沒有功能上的作用。skill 有 `TC.md` 時，改 `SKILL.md` 要在同一個 commit 同步更新它；新 skill 不需要附，除非我要求。
 - 自製 plugin 的 `plugin.json` 寫 `name`（與資料夾同名）、`description`、`author`，不寫 `version`；內容放在 plugin 資料夾裡的標準位置：`skills/<skill 名>/SKILL.md`、`agents/`、`commands/`、`hooks/hooks.json`、`.mcp.json`。agent、MCP server 這類不單獨放在 repo 根目錄。
 
@@ -39,4 +39,4 @@
 - **不留 AI credit**：commit message、文件、程式碼都不寫 AI 工具的署名。
 - **文件語言**：章節標題英文（`## Installation`）、內文繁體中文、技術術語保留英文。腳本的註解與輸出用英文。
 - **文檔同步**：腳本的用法或行為有變更時，在同一個 commit 內同步更新 README 與這份文件。
-- **先驗證再採用**：Claude Code 的 plugin 與 marketplace 行為以實測或官方文檔為準，不憑推斷寫進腳本或文件；沒驗證過的要明講。要實測安裝時，用另一個名字的暫時 marketplace 在暫存資料夾裡進行，不要動到名為 `oh-my-skills` 的那個。
+- **先驗證再採用**：Claude Code 的 plugin 與 marketplace 行為以實測或官方文檔為準，不憑推斷寫進腳本或文件；沒驗證過的要明講。要實測安裝時，用另一個名字的暫時 marketplace 在暫存資料夾裡進行，不要動到名為 `agent-toolbox` 的那個。

@@ -1,4 +1,4 @@
-# oh-my-skills
+# agent-toolbox
 
 個人的 agent skill 與 plugin 收藏，同時是一個可以安裝的 marketplace。
 
@@ -14,13 +14,13 @@
 ## Installation
 
 ```
-/plugin marketplace add aj006600/oh-my-skills
-/plugin install <條目>@oh-my-skills
+/plugin marketplace add aj006600/agent-toolbox
+/plugin install <條目>@agent-toolbox
 ```
 
 安裝後重啟 Claude Code。散裝 skill 會以 `<條目>:<skill 名稱>` 出現，例如 `llm-wiki:llm-wiki`；plugin 的前綴是它自己的 plugin 名稱，通常與條目同名。
 
-要用這裡的腳本，另外把 repo clone 下來：`git clone https://github.com/aj006600/oh-my-skills.git`。
+要用這裡的腳本，另外把 repo clone 下來：`git clone https://github.com/aj006600/agent-toolbox.git`。
 
 ## Own Skills
 
@@ -70,7 +70,7 @@
 2. 腳本會把條目加進清單和上面對應的表格。對方 repo 根目錄不是 plugin 也不是 skill 時，它會列出可以加的子資料夾；條目名稱已被使用時，它會停止且不做任何變更，決定新名稱後加上 `--name <名稱>` 重跑。
 3. 把表格裡的 `（待填）` 填好。
 4. commit 並 push。自製內容要連同它的資料夾一起 commit。
-5. 執行 `/plugin marketplace update oh-my-skills` 和 `/plugin install <條目>@oh-my-skills`，然後重啟 Claude Code。
+5. 執行 `/plugin marketplace update agent-toolbox` 和 `/plugin install <條目>@agent-toolbox`，然後重啟 Claude Code。
 
 自製 plugin 的資料夾要有 `.claude-plugin/plugin.json`（`name` 與資料夾同名，不寫 `version`）。內容依需要放：`skills/<skill 名>/SKILL.md`、`agents/<agent 名>.md`、`commands/<指令名>.md`、`hooks/hooks.json`、`.mcp.json`。
 
@@ -78,4 +78,4 @@
 
 1. 從 `.claude-plugin/marketplace.json` 刪掉那一筆條目，並刪掉上面表格的那一列；自製的連同資料夾一起刪。
 2. commit 並 push。
-3. 在每台裝過的電腦執行 `/plugin uninstall <條目>@oh-my-skills`。
+3. 在每台裝過的電腦執行 `/plugin uninstall <條目>@agent-toolbox`。

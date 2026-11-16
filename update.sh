@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Update the entries installed on this machine from the oh-my-skills marketplace.
+# Update the entries installed on this machine from the agent-toolbox marketplace.
 #
 #   ./update.sh              update every installed entry
 #   ./update.sh <entry>...   update only the named entries
@@ -12,7 +12,7 @@
 set -uo pipefail
 cd "$(dirname "$0")"
 
-MARKETPLACE="oh-my-skills"
+MARKETPLACE="agent-toolbox"
 MANIFEST=".claude-plugin/marketplace.json"
 INSTALLED="$HOME/.claude/plugins/installed_plugins.json"
 
@@ -25,7 +25,7 @@ git pull -q --ff-only 2>/dev/null || echo "Warning: could not pull this repo; us
 
 if ! claude plugin marketplace list --json | jq -e --arg m "$MARKETPLACE" 'any(.[]; .name == $m)' >/dev/null; then
   echo "Marketplace '$MARKETPLACE' is not added in Claude Code. Add it first:" >&2
-  echo "  /plugin marketplace add aj006600/oh-my-skills" >&2
+  echo "  /plugin marketplace add aj006600/agent-toolbox" >&2
   exit 1
 fi
 claude plugin marketplace update "$MARKETPLACE"

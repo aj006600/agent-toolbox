@@ -1,6 +1,6 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "oh-my-skills",
+  "name": "agent-toolbox",
   "description": "YiTsung's collection of agent skills and plugins",
   "owner": {
     "name": "YiTsung"

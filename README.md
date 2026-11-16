@@ -45,6 +45,9 @@
 
 原始檔在 `plugins/<名稱>/`。目前沒有。
 
+| 條目 | 用途 | 包含的 skill |
+|---|---|---|
+
 ## External
 
 | 條目 | 種類 | 來源 | 用途 | 我的評語 |
@@ -61,7 +64,7 @@
 ./update.sh --all              # 所有外部條目升到對方最新版
 ./update.sh <條目>             # 單一條目升到對方最新版
 ./update.sh <條目> <版本>      # 單一條目升或降到指定版本（分支、tag 或完整 commit 編號）
-./update.sh --sync             # 只把這台電腦已安裝的東西對齊到目前的鎖定版本
+./update.sh --sync             # 先 git pull，再把這台電腦已安裝的東西對齊到目前的鎖定版本
 ```
 
 升降版本會自動 commit 並 push `marketplace.json`，再更新這台電腦上已安裝的條目；更新後要重啟 Claude Code 才生效。需要 `git`、`jq` 和 `claude` CLI。
@@ -94,7 +97,7 @@ git log -p .claude-plugin/marketplace.json
 ./update.sh --sync
 ```
 
-不要用 `--all`，它會把所有條目再升到當下最新版。
+它會先 `git pull` 這個 repo，再更新已安裝的條目；完成後重啟 Claude Code。不要用 `--all`，它會把所有條目再升到當下最新版。
 
 ### Add an external skill or plugin
 
@@ -108,4 +111,10 @@ git log -p .claude-plugin/marketplace.json
 2. 在 `marketplace.json` 加一筆條目，並在對應的表格加一列。
 3. commit 並 push，再安裝（步驟同上）。
 
-之後修改自製內容，push 後執行 `./update.sh --sync` 即可。
+之後修改自製內容，push 後執行 `./update.sh --sync`，再重啟 Claude Code。
+
+### Remove an entry
+
+1. 從 `marketplace.json` 刪掉那一筆條目，並刪掉對應表格的那一列；自製的連同檔案一起刪。
+2. commit 並 push。
+3. 在每台裝過的電腦執行 `/plugin uninstall <條目>@oh-my-skills`。沒做這一步的話，之後跑 `./update.sh --sync` 會跳過該條目，並印出解除安裝的指令提醒你。

@@ -5,7 +5,7 @@
 #   ./update.sh --all             pin every external entry to its latest commit
 #   ./update.sh <entry>           pin one entry to its latest commit
 #   ./update.sh <entry> <ref>     pin one entry to a branch, tag, or full 40-char sha
-#   ./update.sh --sync            only bring this machine's installs in line with the pins
+#   ./update.sh --sync            pull this repo, then bring this machine's installs in line with the pins
 #
 # Changing a pin commits and pushes the manifest, then updates the matching installs
 # in Claude Code. Nothing runs unless you invoke it. Requires git, jq, and the claude CLI.
@@ -67,6 +67,14 @@ sync_installed() {
     jq -r --arg m "@$MARKETPLACE" '.[].id | select(endswith($m)) | rtrimstr($m)' | sort -u)
   for name in ${*:-$installed}; do
     if echo "$installed" | grep -qx "$name"; then
+      if [ -z "$(field "$name" .name)" ]; then
+        # Installed here but removed from the manifest: leave it for the owner to uninstall.
+        echo "$name: no longer in the marketplace; skipped. To remove it from this machine:"
+        claude plugin list --json |
+          jq -r --arg id "$name@$MARKETPLACE" \
+            '.[] | select(.id == $id) | "  claude plugin uninstall \($id) --scope \(.scope)"'
+        continue
+      fi
       claude plugin update "$name@$MARKETPLACE" || failed=1
       reinstall_if_stale "$name" || failed=1
     fi
@@ -92,7 +100,12 @@ reinstall_if_stale() {
 case "${1:-}" in
   "") status; exit 0 ;;
   -h | --help) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-  --sync) sync_installed; exit $? ;;
+  --sync)
+    # Pull first: the reinstall check reads the pins from this clone's manifest.
+    [ -n "${OMS_NO_GIT:-}" ] || git pull -q --ff-only
+    sync_installed
+    exit $?
+    ;;
   --all) targets=$(externals); ref="" ;;
   *)
     targets=$1

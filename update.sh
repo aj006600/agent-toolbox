@@ -133,9 +133,9 @@ for name in $targets; do
 done
 
 if [ -n "$changed" ] && [ -z "${OMS_NO_GIT:-}" ]; then
-  git commit -q -m "Bump$changed" -- "$MANIFEST"
+  git commit -q -m "chore: bump$changed" -- "$MANIFEST"
   git push -q
-  echo "Pushed: Bump$changed"
+  echo "Pushed: chore: bump$changed"
 fi
 
 # 2. Claude Code: update the installs of the entries just handled.

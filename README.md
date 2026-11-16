@@ -5,7 +5,26 @@
 - **自製**的散裝 skill 和 plugin，檔案放在這個 repo。
 - **外部**的散裝 skill 和 plugin，這裡只有一筆指向對方 repo 的條目，並鎖定在某個版本。
 
-## 安裝
+## How It Works
+
+```
+這個 repo（GitHub）                         你的電腦（Claude Code）
+┌──────────────────────────────┐
+│ skills/、plugins/             │  自製：檔案就在這裡
+│ .claude-plugin/              │
+│   marketplace.json           │──安裝／更新──▶  已安裝的條目
+│     自製條目 → 指向上面的資料夾 │
+│     外部條目 → 對方 repo + 鎖定版本 ──▶ 從對方 repo 抓那個版本
+└──────────────────────────────┘
+```
+
+- `marketplace.json` 是清單，每一筆條目對應一個可安裝的散裝 skill 或 plugin。
+- 自製條目永遠使用這個 repo 裡的最新內容。
+- 外部條目不複製對方的檔案，只記錄對方 repo 的位置和鎖定版本（某一個 commit）。對方之後怎麼改都不會影響你，直到你自己升版。
+- 你的電腦是從 GitHub 上的清單安裝的，所以清單的變更要 push 之後才會生效。
+- 沒有任何自動更新：清單和你電腦上的安裝，都只在你下指令時才會變動。
+
+## Installation
 
 ```
 /plugin marketplace add aj006600/oh-my-skills
@@ -14,7 +33,7 @@
 
 安裝後 skill 會以 `<條目>:<skill 名稱>` 出現，例如 `llm-wiki:llm-wiki`。
 
-## 自製散裝 skill
+## Own Skills
 
 原始檔在 [`skills/`](skills/)，每個 skill 各自一筆條目。
 
@@ -22,18 +41,18 @@
 |---|---|---|
 | [llm-wiki](skills/llm-wiki/SKILL.md) | 依 Karpathy 的 LLM Wiki 模式，建立並維護互相連結的 markdown 知識庫 | 提到建立、匯入、查詢或檢查 wiki / knowledge base 時 |
 
-## 自製 plugin
+## Own Plugins
 
 原始檔在 `plugins/<名稱>/`。目前沒有。
 
-## 外部
+## External
 
 | 條目 | 種類 | 來源 | 用途 | 我的評語 |
 |---|---|---|---|---|
 | mattpocock-skills | plugin | [mattpocock/skills](https://github.com/mattpocock/skills) | 工程流程 skill：grilling、TDD、code review、domain modeling 等 | |
 | trader-skill | plugin | [jakeschincariol/trader-skill](https://github.com/jakeschincariol/trader-skill) | 11 個投資 skill：複製投資人 13F 持股、追蹤新聞與國會議員交易、依預算配置部位、風險檢查、再平衡 | |
 
-## 更新外部條目
+## Updating External Entries
 
 外部條目都鎖定在對方 repo 的某個 commit，只有你下指令時才會變動。
 
@@ -47,8 +66,46 @@
 
 升降版本會自動 commit 並 push `marketplace.json`，再更新這台電腦上已安裝的條目；更新後要重啟 Claude Code 才生效。需要 `git`、`jq` 和 `claude` CLI。
 
-## 新增內容
+## Common Tasks
 
-- **自製散裝 skill**：建立 `skills/<名稱>/SKILL.md`，在 `.claude-plugin/marketplace.json` 加一筆條目，並在上表加一列。
-- **自製 plugin**：建立 `plugins/<名稱>/`（含 `.claude-plugin/plugin.json`），其餘同上。
-- **外部**：在 `marketplace.json` 加一筆指向對方 repo 的條目並鎖定在對方最新版，並在上表加一列。
+### Set up a new machine
+
+1. `git clone https://github.com/aj006600/oh-my-skills.git`（之後要用 `update.sh`）。
+2. 在 Claude Code 執行 `/plugin marketplace add aj006600/oh-my-skills`。
+3. 對想用的條目執行 `/plugin install <條目>@oh-my-skills`，然後重啟 Claude Code。
+
+### Upgrade an external entry
+
+1. `./update.sh` 看哪些條目有更新，點比較連結看對方改了什麼。
+2. `./update.sh <條目>`（或 `./update.sh --all`）升到最新版。
+3. 重啟 Claude Code。
+
+### Roll back after an upgrade
+
+升級時腳本會印出一行 `roll back with: ./update.sh <條目> <舊的 commit 編號>`，執行那一行即可。事後想查以前鎖過哪些版本：
+
+```bash
+git log -p .claude-plugin/marketplace.json
+```
+
+### Catch up on another machine
+
+```bash
+./update.sh --sync
+```
+
+不要用 `--all`，它會把所有條目再升到當下最新版。
+
+### Add an external skill or plugin
+
+1. 在 `.claude-plugin/marketplace.json` 加一筆指向對方 repo 的條目，鎖定在對方最新的 commit。對方是散裝 skill 時，每個 skill 各自一筆。
+2. 在 External 表格加一列。
+3. commit 並 push，再執行 `/plugin marketplace update oh-my-skills` 和 `/plugin install <條目>@oh-my-skills`。
+
+### Add own content
+
+1. 散裝 skill 建立 `skills/<名稱>/SKILL.md`；plugin 建立 `plugins/<名稱>/`（含 `.claude-plugin/plugin.json`）。
+2. 在 `marketplace.json` 加一筆條目，並在對應的表格加一列。
+3. commit 並 push，再安裝（步驟同上）。
+
+之後修改自製內容，push 後執行 `./update.sh --sync` 即可。

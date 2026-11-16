@@ -4,7 +4,7 @@
 
 ## Language
 
-### 內容的種類
+### Kinds of content
 
 **Skill**:
 一個含 `SKILL.md` 的資料夾，是可被 agent 載入的最小單位。
@@ -17,7 +17,7 @@ _Avoid_: 獨立 skill、單一 skill
 帶有 `plugin.json` 的套件，可包含多個 skill 以及其他元件。
 _Avoid_: 套件包、skill 合集
 
-### 內容的來源
+### Origin
 
 **自製**:
 檔案存放在這個 repo 裡的散裝 skill 或 plugin。

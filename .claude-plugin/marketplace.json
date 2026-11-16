@@ -1,15 +1,22 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "oh-my-skills",
-  "description": "YiTsung's personal collection of agent skills",
+  "description": "YiTsung's collection of agent skills and plugins",
   "owner": {
     "name": "YiTsung"
   },
   "plugins": [
     {
-      "name": "oh-my-skills",
-      "description": "YiTsung's personal collection of agent skills",
-      "source": "./"
+      "name": "llm-wiki",
+      "description": "Build and maintain a persistent, interlinked markdown knowledge base following Karpathy's LLM Wiki pattern",
+      "author": {
+        "name": "YiTsung"
+      },
+      "source": "./skills/llm-wiki",
+      "strict": false,
+      "skills": [
+        "./"
+      ]
     },
     {
       "name": "mattpocock-skills",
@@ -19,7 +26,8 @@
       },
       "source": {
         "source": "url",
-        "url": "https://github.com/mattpocock/skills.git"
+        "url": "https://github.com/mattpocock/skills.git",
+        "sha": "5863806dd4e15c63174bee4e7515a4256792ecfa"
       },
       "homepage": "https://github.com/mattpocock/skills"
     },
@@ -31,7 +39,8 @@
       },
       "source": {
         "source": "url",
-        "url": "https://github.com/jakeschincariol/trader-skill.git"
+        "url": "https://github.com/jakeschincariol/trader-skill.git",
+        "sha": "5189e79b9a480755a3733ac9713f5353981dbe18"
       },
       "homepage": "https://github.com/jakeschincariol/trader-skill"
     }
